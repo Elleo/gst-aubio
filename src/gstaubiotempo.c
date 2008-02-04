@@ -106,10 +106,10 @@ static void
 gst_aubiotempo_base_init (gpointer gclass)
 {
   static GstElementDetails element_details = {
-    "PluginTemplate",
-    "Generic/PluginTemplate",
-    "Generic Template Element",
-    "Thomas Vander Stichele <thomas@apestaart.org>"
+    "Aubio Tempo Analysis",
+    "Analyzer/AubioTempo",
+    "Extract tempo period and beat locations using aubio",
+    "Paul Brossier <piem@piem.org>"
   };
   GstElementClass *element_class = GST_ELEMENT_CLASS (gclass);
 
@@ -251,7 +251,7 @@ plugin_init (GstPlugin * plugin)
   GST_DEBUG_CATEGORY_INIT (gst_aubiotempo_debug, "plugin",
       0, "Template plugin");
 
-  return gst_element_register (plugin, "myelement",
+  return gst_element_register (plugin, "aubiotempo",
       GST_RANK_NONE, GST_TYPE_AUBIOTEMPO);
 }
 
@@ -262,6 +262,6 @@ plugin_init (GstPlugin * plugin)
  */
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
-    "plugin",
-    "Template plugin",
-    plugin_init, VERSION, "LGPL", "GStreamer", "http://gstreamer.net/")
+    "aubiotempo",
+    "Aubiotempo plugin",
+    plugin_init, VERSION, "GPL", "GStreamer", "http://gstreamer.net/")
