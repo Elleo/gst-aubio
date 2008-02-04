@@ -1,0 +1,5 @@
+gst-aubio
+
+This module contains a GStreamer plugin for aubio [0].
+
+[0] http://aubio.org/
