@@ -18,9 +18,9 @@ libgstaubio_la_SOURCES = gstaubiotempo.c
 
 # flags used to compile the aubio gst plugin
 # add other _CFLAGS and _LIBS as needed
-libgstaubio_la_CFLAGS = $(GST_CFLAGS)
-libgstaubio_la_LIBADD = $(GST_LIBS)
-libgstaubio_la_LDFLAGS = $(GST_AUBIO_LDFLAGS)
+libgstaubio_la_CFLAGS = $(GST_CFLAGS) $(GST_BASE_CFLAGS) $(GSTPB_BASE_CFLAGS) $(AUBIO_CLFAGS)
+libgstaubio_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(GSTPB_BASE_LIBS) $(AUBIO_LIBS) -lgstaudio-$(GST_MAJORMINOR)
+libgstaubio_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 
 # headers we need but don't want installed
 noinst_HEADERS = gstaubiotempo.h
