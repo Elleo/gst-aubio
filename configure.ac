@@ -1,5 +1,9 @@
 AC_INIT
 
+dnl versions of aubio
+AUBIO_MAJORMINOR=0.3.2
+AUBIO_REQUIRED=0.3.2
+
 dnl versions of gstreamer and plugins-base
 GST_MAJORMINOR=0.10
 GST_REQUIRED=0.10.0
@@ -47,6 +51,21 @@ dnl Give error and exit if we don't have pkgconfig
 if test "x$HAVE_PKGCONFIG" = "xno"; then
   AC_MSG_ERROR(you need to have pkgconfig installed !)
 fi
+
+
+PKG_CHECK_MODULES(AUBIO, \
+  aubio >= $AUBIO_REQUIRED,
+  HAVE_AUBIO=yes,HAVE_AUBIO=no)
+
+dnl Give error and exit if we don't have AUBIOreamer
+if test "x$HAVE_AUBIO" = "xno"; then
+  AC_MSG_ERROR(you need aubio development package (libaubio-dev) installed !)
+fi
+
+dnl make AUBIO_CFLAGS and AUBIO_LIBS available
+AC_SUBST(AUBIO_CFLAGS)
+AC_SUBST(AUBIO_LIBS)
+
 
 dnl Now we're ready to ask for gstreamer libs and cflags
 dnl And we can also ask for the right version of gstreamer
@@ -99,21 +118,6 @@ fi
 dnl make _CFLAGS and _LIBS available
 AC_SUBST(GSTPB_BASE_CFLAGS)
 AC_SUBST(GSTPB_BASE_LIBS)
-
-dnl If we need them, we can also use the gstreamer-controller libraries
-PKG_CHECK_MODULES(GSTCTRL,
-                  gstreamer-controller-$GST_MAJORMINOR >= $GSTPB_REQUIRED,
-                  HAVE_GSTCTRL=yes, HAVE_GSTCTRL=no)
-
-dnl Give a warning if we don't have gstreamer-controller
-dnl you can turn this into an error if you need them
-if test "x$HAVE_GSTCTRL" = "xno"; then
-  AC_MSG_NOTICE(no GStreamer Controller libraries found (gstreamer-controller-$GST_MAJORMINOR))
-fi
-
-dnl make _CFLAGS and _LIBS available
-AC_SUBST(GSTCTRL_CFLAGS)
-AC_SUBST(GSTCTRL_LIBS)
 
 dnl set the plugindir where plugins should be installed
 if test "x${prefix}" = "x$HOME"; then
