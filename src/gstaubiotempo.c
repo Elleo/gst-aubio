@@ -43,13 +43,14 @@
  */
 
 /**
- * SECTION:element-plugin
+ * SECTION:element-aubiotempo
  *
  * <refsect2>
+ * Detects beats along an audio stream 
  * <title>Example launch line</title>
  * <para>
  * <programlisting>
- * gst-launch -v -m audiotestsrc ! plugin ! fakesink silent=TRUE
+ * gst-launch -v -m audiotestsrc ! aubiotempo ! fakesink silent=TRUE
  * </programlisting>
  * </para>
  * </refsect2>
@@ -59,12 +60,21 @@
 #  include <config.h>
 #endif
 
+#include <aubio/aubio.h>
+
 #include <gst/gst.h>
+#include <gst/audio/audio.h>
 
 #include "gstaubiotempo.h"
 
-GST_DEBUG_CATEGORY_STATIC (gst_aubiotempo_debug);
 #define GST_CAT_DEFAULT gst_aubiotempo_debug
+GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
+
+static const GstElementDetails element_details = 
+GST_ELEMENT_DETAILS ("Aubio Tempo Analysis",
+  "Filter/Analyzer/Audio",
+  "Extract tempo period and beat locations using aubio",
+  "Paul Brossier <piem@aubio.org>");
 
 /* Filter signals and args */
 enum
@@ -75,10 +85,18 @@ enum
 
 enum
 {
-  ARG_0,
-  ARG_SILENT
+  PROP_0,
+  PROP_SILENT
 };
 
+#define ALLOWED_CAPS \
+    "audio/x-raw-float,"                                              \
+    " width=(int)32,"                                                 \
+    " endianness=(int)BYTE_ORDER,"                                    \
+    " rate=(int)44100,"                                             \
+    " channels=(int)[1,MAX]"
+
+/*
 static GstStaticPadTemplate sink_factory = GST_STATIC_PAD_TEMPLATE ("sink",
     GST_PAD_SINK,
     GST_PAD_ALWAYS,
@@ -90,50 +108,62 @@ static GstStaticPadTemplate src_factory = GST_STATIC_PAD_TEMPLATE ("src",
     GST_PAD_ALWAYS,
     GST_STATIC_CAPS ("ANY")
     );
+*/
 
-GST_BOILERPLATE (GstAubioTempo, gst_aubiotempo, GstElement,
-    GST_TYPE_ELEMENT);
+GST_BOILERPLATE (GstAubioTempo, gst_aubiotempo, GstAudioFilter,
+    GST_TYPE_AUDIO_FILTER);
 
 static void gst_aubiotempo_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
 static void gst_aubiotempo_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
-static gboolean gst_aubiotempo_set_caps (GstPad * pad, GstCaps * caps);
-static GstFlowReturn gst_aubiotempo_chain (GstPad * pad, GstBuffer * buf);
+//static gboolean gst_aubiotempo_set_caps (GstPad * pad, GstCaps * caps);
+static GstFlowReturn gst_aubiotempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf);
 
+/* GObject vmethod implementations */
 static void
 gst_aubiotempo_base_init (gpointer gclass)
 {
-  static GstElementDetails element_details = {
-    "Aubio Tempo Analysis",
-    "Analyzer/AubioTempo",
-    "Extract tempo period and beat locations using aubio",
-    "Paul Brossier <piem@piem.org>"
-  };
   GstElementClass *element_class = GST_ELEMENT_CLASS (gclass);
 
+  GstCaps *caps;
+
+  caps = gst_caps_from_string (ALLOWED_CAPS);
+
+  gst_audio_filter_class_add_pad_templates (GST_AUDIO_FILTER_CLASS (gclass),
+        caps);
+
+  gst_caps_unref (caps);
+
+  /*
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&src_factory));
   gst_element_class_add_pad_template (element_class,
       gst_static_pad_template_get (&sink_factory));
+  */
+
   gst_element_class_set_details (element_class, &element_details);
+
 }
 
 /* initialize the plugin's class */
 static void
 gst_aubiotempo_class_init (GstAubioTempoClass * klass)
 {
-  GObjectClass *gobject_class;
-  GstElementClass *gstelement_class;
+  GObjectClass *gobject_class = G_OBJECT_CLASS(klass);
+  GstBaseTransformClass *trans_class = GST_BASE_TRANSFORM_CLASS (klass);
+  //GstAudioFilterClass *filter_class = GST_AUDIO_FILTER_CLASS (klass);
 
-  gobject_class = (GObjectClass *) klass;
-  gstelement_class = (GstElementClass *) klass;
+  //trans_class->stop = GST_DEBUG_FUNCPTR (gst_aubiotempo_stop);
+  //trans_class->event = GST_DEBUG_FUNCPTR (gst_aubiotempo_event);
+  trans_class->transform_ip = GST_DEBUG_FUNCPTR (gst_aubiotempo_transform_ip);
+  trans_class->passthrough_on_same_caps = TRUE;
 
   gobject_class->set_property = gst_aubiotempo_set_property;
   gobject_class->get_property = gst_aubiotempo_get_property;
 
-  g_object_class_install_property (gobject_class, ARG_SILENT,
+  g_object_class_install_property (gobject_class, PROP_SILENT,
       g_param_spec_boolean ("silent", "Silent", "Produce verbose output ?",
           FALSE, G_PARAM_READWRITE));
 }
@@ -147,27 +177,19 @@ static void
 gst_aubiotempo_init (GstAubioTempo * filter,
     GstAubioTempoClass * gclass)
 {
-  GstElementClass *klass = GST_ELEMENT_GET_CLASS (filter);
 
-  filter->sinkpad =
-      gst_pad_new_from_template (gst_element_class_get_pad_template (klass,
-          "sink"), "sink");
-  gst_pad_set_setcaps_function (filter->sinkpad,
-                                GST_DEBUG_FUNCPTR(gst_aubiotempo_set_caps));
-  gst_pad_set_getcaps_function (filter->sinkpad,
-                                GST_DEBUG_FUNCPTR(gst_pad_proxy_getcaps));
+  filter->silent = TRUE;
 
-  filter->srcpad =
-      gst_pad_new_from_template (gst_element_class_get_pad_template (klass,
-          "src"), "src");
-  gst_pad_set_getcaps_function (filter->srcpad,
-                                GST_DEBUG_FUNCPTR(gst_pad_proxy_getcaps));
+  filter->type_onset = aubio_onset_kl;
 
-  gst_element_add_pad (GST_ELEMENT (filter), filter->sinkpad);
-  gst_element_add_pad (GST_ELEMENT (filter), filter->srcpad);
-  gst_pad_set_chain_function (filter->sinkpad,
-                              GST_DEBUG_FUNCPTR(gst_aubiotempo_chain));
-  filter->silent = FALSE;
+  filter->buf_size = 1024;
+  filter->hop_size = 512;
+  filter->channels = 1;
+
+  filter->ibuf = new_fvec(filter->hop_size, filter->channels);
+  filter->out = new_fvec(2,filter->channels);
+  filter->t = new_aubio_tempo(filter->type_onset,
+          filter->buf_size, filter->hop_size, filter->channels);
 }
 
 static void
@@ -177,7 +199,7 @@ gst_aubiotempo_set_property (GObject * object, guint prop_id,
   GstAubioTempo *filter = GST_AUBIOTEMPO (object);
 
   switch (prop_id) {
-    case ARG_SILENT:
+    case PROP_SILENT:
       filter->silent = g_value_get_boolean (value);
       break;
     default:
@@ -193,7 +215,7 @@ gst_aubiotempo_get_property (GObject * object, guint prop_id,
   GstAubioTempo *filter = GST_AUBIOTEMPO (object);
 
   switch (prop_id) {
-    case ARG_SILENT:
+    case PROP_SILENT:
       g_value_set_boolean (value, filter->silent);
       break;
     default:
@@ -205,6 +227,7 @@ gst_aubiotempo_get_property (GObject * object, guint prop_id,
 /* GstElement vmethod implementations */
 
 /* this function handles the link with other elements */
+/*
 static gboolean
 gst_aubiotempo_set_caps (GstPad * pad, GstCaps * caps)
 {
@@ -216,23 +239,44 @@ gst_aubiotempo_set_caps (GstPad * pad, GstCaps * caps)
 
   return gst_pad_set_caps (pad, caps);
 }
+*/
 
 /* chain function
  * this function does the actual processing
  */
 
 static GstFlowReturn
-gst_aubiotempo_chain (GstPad * pad, GstBuffer * buf)
+gst_aubiotempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
 {
-  GstAubioTempo *filter;
+  uint j;
+  GstAubioTempo *filter = GST_AUBIOTEMPO (trans);
+  GstAudioFilter *audiofilter = GST_AUDIO_FILTER(trans);
 
-  filter = GST_AUBIOTEMPO (GST_OBJECT_PARENT (pad));
+  gint nsamples = GST_BUFFER_SIZE (buf) / (4 * audiofilter->format.channels);
 
-  if (filter->silent == FALSE)
-    g_print ("I'm plugged, therefore I'm in.\n");
+  /* block loop */
+  for (j = 0; j < nsamples; j++) {
+    /* copy input to ibuf */
+    fvec_write_sample(filter->ibuf, (smpl_t)(GST_BUFFER_DATA(buf)[j]), 0, filter->pos);
 
-  /* just push out the incoming buffer without touching it */
-  return gst_pad_push (filter->srcpad, buf);
+    if (filter->pos == filter->hop_size - 1) {
+      aubio_tempo(filter->t, filter->ibuf, filter->out);
+
+      if (filter->out->data[0][0]==1) {
+        gint64 now = GST_BUFFER_TIMESTAMP (buf);
+        // correction of inside buffer time
+        //now += GST_FRAMES_TO_CLOCK_TIME(j, audiofilter->format.rate);
+        if (filter->silent == FALSE) {
+            g_print ("beat: %" GST_TIME_FORMAT "\n", GST_TIME_ARGS(now));
+        }
+      }
+
+      filter->pos = -1; /* so it will be zero next j loop */
+    }
+    filter->pos++;
+  }
+
+  return GST_FLOW_OK;
 }
 
 
@@ -240,16 +284,12 @@ gst_aubiotempo_chain (GstPad * pad, GstBuffer * buf)
  * initialize the plug-in itself
  * register the element factories and pad templates
  * register the features
- *
- * exchange the string 'plugin' with your elemnt name
  */
 static gboolean
 plugin_init (GstPlugin * plugin)
 {
-  /* exchange the strings 'plugin' and 'Template plugin' with your
-   * plugin name and description */
-  GST_DEBUG_CATEGORY_INIT (gst_aubiotempo_debug, "plugin",
-      0, "Template plugin");
+  GST_DEBUG_CATEGORY_INIT (gst_aubiotempo_debug, "aubiotempo",
+      0, "Aubiotempo plugin");
 
   return gst_element_register (plugin, "aubiotempo",
       GST_RANK_NONE, GST_TYPE_AUBIOTEMPO);
@@ -264,4 +304,4 @@ GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
     "aubiotempo",
     "Aubiotempo plugin",
-    plugin_init, VERSION, "GPL", "GStreamer", "http://gstreamer.net/")
+    plugin_init, VERSION, "GPL", "GStreamer-aubio", "http://aubio.org/")

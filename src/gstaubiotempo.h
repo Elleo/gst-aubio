@@ -46,6 +46,8 @@
 #define __GST_AUBIOTEMPO_H__
 
 #include <gst/gst.h>
+#include <gst/base/gstbasetransform.h>
+#include <gst/audio/gstaudiofilter.h>
 
 G_BEGIN_DECLS
 
@@ -53,29 +55,43 @@ G_BEGIN_DECLS
 #define GST_TYPE_AUBIOTEMPO \
   (gst_aubiotempo_get_type())
 #define GST_AUBIOTEMPO(obj) \
-  (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_AUBIOTEMPO,GstAubioTempo))
-#define GST_AUBIOTEMPO_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_AUBIOTEMPO,GstAubioTempoClass))
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), GST_TYPE_AUBIOTEMPO,GstAubioTempo))
 #define GST_IS_AUBIOTEMPO(obj) \
-  (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_AUBIOTEMPO))
+  (G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_AUBIOTEMPO))
+#define GST_AUBIOTEMPO_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), GST_TYPE_AUBIOTEMPO,GstAubioTempoClass))
 #define GST_IS_AUBIOTEMPO_CLASS(klass) \
-  (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_AUBIOTEMPO))
+  (G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_AUBIOTEMPO))
+#define GST_AUBIOTEMPO_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS((obj), GST_TYPE_AUBIOTEMPO, GstAubioTempoClass))
 
 typedef struct _GstAubioTempo      GstAubioTempo;
 typedef struct _GstAubioTempoClass GstAubioTempoClass;
 
 struct _GstAubioTempo
 {
-  GstElement element;
+  GstAudioFilter element;
 
   GstPad *sinkpad, *srcpad;
 
   gboolean silent;
+
+  aubio_tempo_t * t;
+  fvec_t * ibuf;
+  fvec_t * out;
+
+  uint buf_size;
+  uint hop_size;
+  uint channels;
+  uint pos;
+
+  aubio_onsetdetection_type type_onset;
+
 };
 
 struct _GstAubioTempoClass 
 {
-  GstElementClass parent_class;
+  GstAudioFilterClass parent_class;
 };
 
 GType gst_aubiotempo_get_type (void);
