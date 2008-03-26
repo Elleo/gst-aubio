@@ -32,7 +32,7 @@ G_BEGIN_DECLS
 
 /* #defines don't like whitespacey bits */
 #define GST_TYPE_AUBIOTEMPO \
-  (gst_aubiotempo_get_type())
+  (gst_aubio_tempo_get_type())
 #define GST_AUBIOTEMPO(obj) \
   (G_TYPE_CHECK_INSTANCE_CAST((obj), GST_TYPE_AUBIOTEMPO,GstAubioTempo))
 #define GST_IS_AUBIOTEMPO(obj) \
@@ -73,7 +73,7 @@ struct _GstAubioTempoClass
   GstAudioFilterClass parent_class;
 };
 
-GType gst_aubiotempo_get_type (void);
+GType gst_aubio_tempo_get_type (void);
 
 G_END_DECLS
 

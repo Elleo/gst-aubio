@@ -67,20 +67,20 @@ enum
     " rate=(int)44100,"                                             \
     " channels=(int)[1,MAX]"
 
-GST_BOILERPLATE (GstAubioTempo, gst_aubiotempo, GstAudioFilter,
+GST_BOILERPLATE (GstAubioTempo, gst_aubio_tempo, GstAudioFilter,
     GST_TYPE_AUDIO_FILTER);
 
-static void gst_aubiotempo_finalize (GObject * obj);
-static void gst_aubiotempo_set_property (GObject * object, guint prop_id,
+static void gst_aubio_tempo_finalize (GObject * obj);
+static void gst_aubio_tempo_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
-static void gst_aubiotempo_get_property (GObject * object, guint prop_id,
+static void gst_aubio_tempo_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
-static GstFlowReturn gst_aubiotempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf);
+static GstFlowReturn gst_aubio_tempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf);
 
 /* GObject vmethod implementations */
 static void
-gst_aubiotempo_base_init (gpointer gclass)
+gst_aubio_tempo_base_init (gpointer gclass)
 {
   GstElementClass *element_class = GST_ELEMENT_CLASS (gclass);
 
@@ -99,20 +99,20 @@ gst_aubiotempo_base_init (gpointer gclass)
 
 /* initialize the plugin's class */
 static void
-gst_aubiotempo_class_init (GstAubioTempoClass * klass)
+gst_aubio_tempo_class_init (GstAubioTempoClass * klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS(klass);
   GstBaseTransformClass *trans_class = GST_BASE_TRANSFORM_CLASS (klass);
   //GstAudioFilterClass *filter_class = GST_AUDIO_FILTER_CLASS (klass);
 
-  //trans_class->stop = GST_DEBUG_FUNCPTR (gst_aubiotempo_stop);
-  //trans_class->event = GST_DEBUG_FUNCPTR (gst_aubiotempo_event);
-  trans_class->transform_ip = GST_DEBUG_FUNCPTR (gst_aubiotempo_transform_ip);
+  //trans_class->stop = GST_DEBUG_FUNCPTR (gst_aubio_tempo_stop);
+  //trans_class->event = GST_DEBUG_FUNCPTR (gst_aubio_tempo_event);
+  trans_class->transform_ip = GST_DEBUG_FUNCPTR (gst_aubio_tempo_transform_ip);
   trans_class->passthrough_on_same_caps = TRUE;
 
-  gobject_class->finalize = gst_aubiotempo_finalize;
-  gobject_class->set_property = gst_aubiotempo_set_property;
-  gobject_class->get_property = gst_aubiotempo_get_property;
+  gobject_class->finalize = gst_aubio_tempo_finalize;
+  gobject_class->set_property = gst_aubio_tempo_set_property;
+  gobject_class->get_property = gst_aubio_tempo_get_property;
 
   g_object_class_install_property (gobject_class, PROP_SILENT,
       g_param_spec_boolean ("silent", "Silent", "Produce verbose output ?",
@@ -120,7 +120,7 @@ gst_aubiotempo_class_init (GstAubioTempoClass * klass)
 }
 
 static void
-gst_aubiotempo_init (GstAubioTempo * filter,
+gst_aubio_tempo_init (GstAubioTempo * filter,
     GstAubioTempoClass * gclass)
 {
 
@@ -139,25 +139,25 @@ gst_aubiotempo_init (GstAubioTempo * filter,
 }
 
 static void
-gst_aubiotempo_finalize (GObject * obj)
+gst_aubio_tempo_finalize (GObject * obj)
 {
-  GstAubioTempo * aubiotempo = GST_AUBIOTEMPO (obj);
+  GstAubioTempo * aubio_tempo = GST_AUBIOTEMPO (obj);
 
-  if (aubiotempo->t) {
-    del_aubio_tempo(aubiotempo->t);
+  if (aubio_tempo->t) {
+    del_aubio_tempo(aubio_tempo->t);
   }
-  if (aubiotempo->ibuf) {
-    del_fvec(aubiotempo->ibuf);
+  if (aubio_tempo->ibuf) {
+    del_fvec(aubio_tempo->ibuf);
   }
-  if (aubiotempo->out) {
-    del_fvec(aubiotempo->out);
+  if (aubio_tempo->out) {
+    del_fvec(aubio_tempo->out);
   }
 
   G_OBJECT_CLASS (parent_class)->finalize (obj);
 }
 
 static void
-gst_aubiotempo_set_property (GObject * object, guint prop_id,
+gst_aubio_tempo_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec)
 {
   GstAubioTempo *filter = GST_AUBIOTEMPO (object);
@@ -173,7 +173,7 @@ gst_aubiotempo_set_property (GObject * object, guint prop_id,
 }
 
 static void
-gst_aubiotempo_get_property (GObject * object, guint prop_id,
+gst_aubio_tempo_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec)
 {
   GstAubioTempo *filter = GST_AUBIOTEMPO (object);
@@ -189,7 +189,7 @@ gst_aubiotempo_get_property (GObject * object, guint prop_id,
 }
 
 static GstFlowReturn
-gst_aubiotempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
+gst_aubio_tempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
 {
   uint j;
   GstAubioTempo *filter = GST_AUBIOTEMPO (trans);
