@@ -16,6 +16,7 @@ plugin_LTLIBRARIES = libgstaubio.la
 # sources used to compile this plug-in
 libgstaubio_la_SOURCES = \
 		gstaubiotempo.c \
+		gstaubiopitch.c \
 		plugin.c
 
 # flags used to compile the aubio gst plugin
@@ -25,4 +26,6 @@ libgstaubio_la_LIBADD = $(GST_LIBS) $(GST_BASE_LIBS) $(GSTPB_BASE_LIBS) $(AUBIO_
 libgstaubio_la_LDFLAGS = $(GST_PLUGIN_LDFLAGS)
 
 # headers we need but don't want installed
-noinst_HEADERS = gstaubiotempo.h
+noinst_HEADERS = \
+		gstaubiotempo.h \
+		gstaubiopitch.h

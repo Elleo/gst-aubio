@@ -21,6 +21,7 @@
 
 #include <gst/gst.h>
 #include "gstaubiotempo.h"
+#include "gstaubiopitch.h"
 
 #define GST_CAT_DEFAULT gst_aubiotempo_debug
 GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
@@ -32,7 +33,9 @@ plugin_init (GstPlugin * plugin)
       0, "Aubiotempo plugin");
 
   return gst_element_register (plugin, "aubiotempo",
-      GST_RANK_NONE, GST_TYPE_AUBIOTEMPO);
+      GST_RANK_NONE, GST_TYPE_AUBIOTEMPO)
+      && gst_element_register (plugin, "aubiopitch",
+      GST_RANK_NONE, GST_TYPE_AUBIO_PITCH);
 }
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
