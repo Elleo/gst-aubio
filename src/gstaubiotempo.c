@@ -200,7 +200,8 @@ gst_aubio_tempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
   /* block loop */
   for (j = 0; j < nsamples; j++) {
     /* copy input to ibuf */
-    fvec_write_sample(filter->ibuf, (smpl_t)(GST_BUFFER_DATA(buf)[j]), 0, filter->pos);
+    fvec_write_sample(filter->ibuf, ((smpl_t *) GST_BUFFER_DATA(buf))[j], 0,
+        filter->pos);
 
     if (filter->pos == filter->hop_size - 1) {
       aubio_tempo(filter->t, filter->ibuf, filter->out);
