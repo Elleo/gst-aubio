@@ -14,7 +14,9 @@ plugin_LTLIBRARIES = libgstaubio.la
 ##############################################################################
 
 # sources used to compile this plug-in
-libgstaubio_la_SOURCES = gstaubiotempo.c
+libgstaubio_la_SOURCES = \
+		gstaubiotempo.c \
+		plugin.c
 
 # flags used to compile the aubio gst plugin
 # add other _CFLAGS and _LIBS as needed

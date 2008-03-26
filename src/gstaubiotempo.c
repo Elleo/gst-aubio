@@ -1,46 +1,22 @@
 /*
- * GStreamer
- * Copyright 2005 Thomas Vander Stichele <thomas@apestaart.org>
- * Copyright 2005 Ronald S. Bultje <rbultje@ronald.bitfreak.net>
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *
- * Alternatively, the contents of this file may be used under the
- * GNU Lesser General Public License Version 2.1 (the "LGPL"), in
- * which case the following provisions apply instead of the ones
- * mentioned above:
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
- *
- * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
- */
+    Copyright (C) 2008 Paul Brossier <piem@piem.org>
+
+    This file is part of gst-aubio.
+
+    gst-aubio is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    gst-aubio is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with gst-aubio.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
 
 /**
  * SECTION:element-aubiotempo
@@ -60,15 +36,10 @@
 #  include <config.h>
 #endif
 
-#include <aubio/aubio.h>
-
 #include <gst/gst.h>
 #include <gst/audio/audio.h>
 
 #include "gstaubiotempo.h"
-
-#define GST_CAT_DEFAULT gst_aubiotempo_debug
-GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
 
 static const GstElementDetails element_details = 
 GST_ELEMENT_DETAILS ("Aubio Tempo Analysis",
@@ -96,20 +67,6 @@ enum
     " rate=(int)44100,"                                             \
     " channels=(int)[1,MAX]"
 
-/*
-static GstStaticPadTemplate sink_factory = GST_STATIC_PAD_TEMPLATE ("sink",
-    GST_PAD_SINK,
-    GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("ANY")
-    );
-
-static GstStaticPadTemplate src_factory = GST_STATIC_PAD_TEMPLATE ("src",
-    GST_PAD_SRC,
-    GST_PAD_ALWAYS,
-    GST_STATIC_CAPS ("ANY")
-    );
-*/
-
 GST_BOILERPLATE (GstAubioTempo, gst_aubiotempo, GstAudioFilter,
     GST_TYPE_AUDIO_FILTER);
 
@@ -118,7 +75,6 @@ static void gst_aubiotempo_set_property (GObject * object, guint prop_id,
 static void gst_aubiotempo_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
-//static gboolean gst_aubiotempo_set_caps (GstPad * pad, GstCaps * caps);
 static GstFlowReturn gst_aubiotempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf);
 
 /* GObject vmethod implementations */
@@ -135,13 +91,6 @@ gst_aubiotempo_base_init (gpointer gclass)
         caps);
 
   gst_caps_unref (caps);
-
-  /*
-  gst_element_class_add_pad_template (element_class,
-      gst_static_pad_template_get (&src_factory));
-  gst_element_class_add_pad_template (element_class,
-      gst_static_pad_template_get (&sink_factory));
-  */
 
   gst_element_class_set_details (element_class, &element_details);
 
@@ -168,11 +117,6 @@ gst_aubiotempo_class_init (GstAubioTempoClass * klass)
           FALSE, G_PARAM_READWRITE));
 }
 
-/* initialize the new element
- * instantiate pads and add them to element
- * set functions
- * initialize structure
- */
 static void
 gst_aubiotempo_init (GstAubioTempo * filter,
     GstAubioTempoClass * gclass)
@@ -180,7 +124,7 @@ gst_aubiotempo_init (GstAubioTempo * filter,
 
   filter->silent = TRUE;
 
-  filter->type_onset = aubio_onset_kl;
+  filter->type_onset = aubio_onset_hfc;
 
   filter->buf_size = 1024;
   filter->hop_size = 512;
@@ -224,27 +168,6 @@ gst_aubiotempo_get_property (GObject * object, guint prop_id,
   }
 }
 
-/* GstElement vmethod implementations */
-
-/* this function handles the link with other elements */
-/*
-static gboolean
-gst_aubiotempo_set_caps (GstPad * pad, GstCaps * caps)
-{
-  GstAubioTempo *filter;
-  GstPad *otherpad;
-
-  filter = GST_AUBIOTEMPO (gst_pad_get_parent (pad));
-  otherpad = (pad == filter->srcpad) ? filter->sinkpad : filter->srcpad;
-
-  return gst_pad_set_caps (pad, caps);
-}
-*/
-
-/* chain function
- * this function does the actual processing
- */
-
 static GstFlowReturn
 gst_aubiotempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
 {
@@ -265,9 +188,9 @@ gst_aubiotempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
       if (filter->out->data[0][0]==1) {
         gint64 now = GST_BUFFER_TIMESTAMP (buf);
         // correction of inside buffer time
-        //now += GST_FRAMES_TO_CLOCK_TIME(j, audiofilter->format.rate);
+        now += GST_FRAMES_TO_CLOCK_TIME(j, audiofilter->format.rate);
         if (filter->silent == FALSE) {
-            g_print ("beat: %" GST_TIME_FORMAT "\n", GST_TIME_ARGS(now));
+          g_print ("beat: %" GST_TIME_FORMAT "\n", GST_TIME_ARGS(now));
         }
       }
 
@@ -279,29 +202,3 @@ gst_aubiotempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
   return GST_FLOW_OK;
 }
 
-
-/* entry point to initialize the plug-in
- * initialize the plug-in itself
- * register the element factories and pad templates
- * register the features
- */
-static gboolean
-plugin_init (GstPlugin * plugin)
-{
-  GST_DEBUG_CATEGORY_INIT (gst_aubiotempo_debug, "aubiotempo",
-      0, "Aubiotempo plugin");
-
-  return gst_element_register (plugin, "aubiotempo",
-      GST_RANK_NONE, GST_TYPE_AUBIOTEMPO);
-}
-
-/* this is the structure that gstreamer looks for to register plugins
- *
- * exchange the strings 'plugin' and 'Template plugin' with you plugin name and
- * description
- */
-GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
-    GST_VERSION_MINOR,
-    "aubiotempo",
-    "Aubiotempo plugin",
-    plugin_init, VERSION, "GPL", "GStreamer-aubio", "http://aubio.org/")
