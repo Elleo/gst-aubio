@@ -70,6 +70,7 @@ enum
 GST_BOILERPLATE (GstAubioTempo, gst_aubiotempo, GstAudioFilter,
     GST_TYPE_AUDIO_FILTER);
 
+static void gst_aubiotempo_finalize (GObject * obj);
 static void gst_aubiotempo_set_property (GObject * object, guint prop_id,
     const GValue * value, GParamSpec * pspec);
 static void gst_aubiotempo_get_property (GObject * object, guint prop_id,
@@ -109,6 +110,7 @@ gst_aubiotempo_class_init (GstAubioTempoClass * klass)
   trans_class->transform_ip = GST_DEBUG_FUNCPTR (gst_aubiotempo_transform_ip);
   trans_class->passthrough_on_same_caps = TRUE;
 
+  gobject_class->finalize = gst_aubiotempo_finalize;
   gobject_class->set_property = gst_aubiotempo_set_property;
   gobject_class->get_property = gst_aubiotempo_get_property;
 
@@ -134,6 +136,24 @@ gst_aubiotempo_init (GstAubioTempo * filter,
   filter->out = new_fvec(2,filter->channels);
   filter->t = new_aubio_tempo(filter->type_onset,
           filter->buf_size, filter->hop_size, filter->channels);
+}
+
+static void
+gst_aubiotempo_finalize (GObject * obj)
+{
+  GstAubioTempo * aubiotempo = GST_AUBIOTEMPO (obj);
+
+  if (aubiotempo->t) {
+    del_aubio_tempo(aubiotempo->t);
+  }
+  if (aubiotempo->ibuf) {
+    del_fvec(aubiotempo->ibuf);
+  }
+  if (aubiotempo->out) {
+    del_fvec(aubiotempo->out);
+  }
+
+  G_OBJECT_CLASS (parent_class)->finalize (obj);
 }
 
 static void
@@ -201,4 +221,3 @@ gst_aubiotempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
 
   return GST_FLOW_OK;
 }
-
