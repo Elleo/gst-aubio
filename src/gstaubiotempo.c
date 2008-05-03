@@ -27,6 +27,10 @@
  * <para>
  * <programlisting>
  * gst-launch -v -m audiotestsrc ! aubiotempo ! fakesink silent=TRUE
+ * gst-launch filesrc location=file.wav ! waveparse ! audioconvert ! \
+ *      aubiotempo silent=FALSE ! audioconvert ! alsasink
+ * gst-launch filesrc location=file.mp3 ! mad ! audioconvert ! \
+ *      aubiotempo silent=FALSE ! audioconvert ! alsasink
  * </programlisting>
  * </para>
  * </refsect2>
@@ -132,6 +136,9 @@ gst_aubio_tempo_init (GstAubioTempo * filter,
   filter->hop_size = 512;
   filter->channels = 1;
 
+  filter->last_beat = -1;
+  filter->period = 0;
+
   filter->ibuf = new_fvec(filter->hop_size, filter->channels);
   filter->out = new_fvec(2,filter->channels);
   filter->t = new_aubio_tempo(filter->type_onset,
@@ -212,8 +219,20 @@ gst_aubio_tempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
         now += GST_FRAMES_TO_CLOCK_TIME(j, audiofilter->format.rate);
         now -= GST_FRAMES_TO_CLOCK_TIME(filter->hop_size - 1, audiofilter->format.rate);
         if (filter->silent == FALSE) {
-          g_print ("beat: %" GST_TIME_FORMAT "\n", GST_TIME_ARGS(now));
+          g_print ("beat: %" GST_TIME_FORMAT " ", GST_TIME_ARGS(now));
         }
+
+        if (filter->last_beat != -1 && now > filter->last_beat) {
+          filter->period = 60./(now - filter->last_beat)*1.e+9;
+          if (filter->silent == FALSE) {
+            g_print ("| period: %f", filter->period);
+          }
+        }
+        if (filter->silent == FALSE) {
+          g_print ("\n");
+        }
+
+        filter->last_beat = now;
       }
 
       filter->pos = -1; /* so it will be zero next j loop */

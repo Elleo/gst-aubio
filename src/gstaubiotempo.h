@@ -64,6 +64,9 @@ struct _GstAubioTempo
   uint channels;
   uint pos;
 
+  gfloat period;
+  GstClockTime last_beat;
+
   aubio_onsetdetection_type type_onset;
 
 };
