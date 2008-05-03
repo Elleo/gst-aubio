@@ -45,6 +45,9 @@
 
 #include "gstaubiotempo.h"
 
+GST_DEBUG_CATEGORY_STATIC(aubiotempo_debug);
+#define GST_CAT_DEFAULT aubiotempo_debug
+
 static const GstElementDetails element_details = 
 GST_ELEMENT_DETAILS ("Aubio Tempo Analysis",
   "Filter/Analyzer/Audio",
@@ -121,6 +124,8 @@ gst_aubio_tempo_class_init (GstAubioTempoClass * klass)
   g_object_class_install_property (gobject_class, PROP_SILENT,
       g_param_spec_boolean ("silent", "Silent", "Produce verbose output ?",
           FALSE, G_PARAM_READWRITE));
+
+  GST_DEBUG_CATEGORY_INIT (aubiotempo_debug, "aubiotempo", 0, "Aubio tempo extraction");
 }
 
 static void
@@ -218,19 +223,17 @@ gst_aubio_tempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
         // correction of inside buffer time
         now += GST_FRAMES_TO_CLOCK_TIME(j, audiofilter->format.rate);
         now -= GST_FRAMES_TO_CLOCK_TIME(filter->hop_size - 1, audiofilter->format.rate);
-        if (filter->silent == FALSE) {
-          g_print ("beat: %" GST_TIME_FORMAT " ", GST_TIME_ARGS(now));
-        }
 
         if (filter->last_beat != -1 && now > filter->last_beat) {
           filter->period = 60./(now - filter->last_beat)*1.e+9;
-          if (filter->silent == FALSE) {
-            g_print ("| period: %f", filter->period);
-          }
         }
+
         if (filter->silent == FALSE) {
-          g_print ("\n");
+          g_print ("beat: %" GST_TIME_FORMAT " ", GST_TIME_ARGS(now));
+          g_print ("| period: %f\n", filter->period);
         }
+
+        GST_LOG_OBJECT(filter, "beat %" GST_TIME_FORMAT ", period %3.f", GST_TIME_ARGS(now), filter->period);
 
         filter->last_beat = now;
       }
