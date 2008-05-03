@@ -126,7 +126,7 @@ gst_aubio_tempo_init (GstAubioTempo * filter,
 
   filter->silent = TRUE;
 
-  filter->type_onset = aubio_onset_hfc;
+  filter->type_onset = aubio_onset_kl;
 
   filter->buf_size = 1024;
   filter->hop_size = 512;
@@ -192,7 +192,7 @@ static GstFlowReturn
 gst_aubio_tempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
 {
   uint j;
-  GstAubioTempo *filter = GST_AUBIOTEMPO (trans);
+  GstAubioTempo *filter = GST_AUBIOTEMPO(trans);
   GstAudioFilter *audiofilter = GST_AUDIO_FILTER(trans);
 
   gint nsamples = GST_BUFFER_SIZE (buf) / (4 * audiofilter->format.channels);
@@ -207,9 +207,10 @@ gst_aubio_tempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
       aubio_tempo(filter->t, filter->ibuf, filter->out);
 
       if (filter->out->data[0][0]==1) {
-        gint64 now = GST_BUFFER_TIMESTAMP (buf);
+        GstClockTime now = GST_BUFFER_TIMESTAMP (buf);
         // correction of inside buffer time
         now += GST_FRAMES_TO_CLOCK_TIME(j, audiofilter->format.rate);
+        now -= GST_FRAMES_TO_CLOCK_TIME(filter->hop_size - 1, audiofilter->format.rate);
         if (filter->silent == FALSE) {
           g_print ("beat: %" GST_TIME_FORMAT "\n", GST_TIME_ARGS(now));
         }
