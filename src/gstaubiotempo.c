@@ -125,7 +125,7 @@ gst_aubio_tempo_class_init (GstAubioTempoClass * klass)
 
   g_object_class_install_property (gobject_class, PROP_SILENT,
       g_param_spec_boolean ("silent", "Silent", "Produce verbose output",
-          FALSE, G_PARAM_READWRITE));
+          TRUE, G_PARAM_READWRITE));
 
   g_object_class_install_property (gobject_class, PROP_MESSAGE,
       g_param_spec_boolean ("message", "Message", "Emit gstreamer messages",
