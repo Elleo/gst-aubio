@@ -64,14 +64,15 @@ enum
 enum
 {
   PROP_0,
-  PROP_SILENT
+  PROP_SILENT,
+  PROP_MESSAGE,
 };
 
 #define ALLOWED_CAPS \
     "audio/x-raw-float,"                                              \
     " width=(int)32,"                                                 \
     " endianness=(int)BYTE_ORDER,"                                    \
-    " rate=(int)44100,"                                             \
+    " rate=(int)44100,"                                               \
     " channels=(int)[1,MAX]"
 
 GST_BOILERPLATE (GstAubioTempo, gst_aubio_tempo, GstAudioFilter,
@@ -83,7 +84,8 @@ static void gst_aubio_tempo_set_property (GObject * object, guint prop_id,
 static void gst_aubio_tempo_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
-static GstFlowReturn gst_aubio_tempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf);
+static GstFlowReturn gst_aubio_tempo_transform_ip (GstBaseTransform * trans,
+        GstBuffer * buf);
 
 /* GObject vmethod implementations */
 static void
@@ -122,10 +124,16 @@ gst_aubio_tempo_class_init (GstAubioTempoClass * klass)
   gobject_class->get_property = gst_aubio_tempo_get_property;
 
   g_object_class_install_property (gobject_class, PROP_SILENT,
-      g_param_spec_boolean ("silent", "Silent", "Produce verbose output ?",
+      g_param_spec_boolean ("silent", "Silent", "Produce verbose output",
           FALSE, G_PARAM_READWRITE));
 
-  GST_DEBUG_CATEGORY_INIT (aubiotempo_debug, "aubiotempo", 0, "Aubio tempo extraction");
+  g_object_class_install_property (gobject_class, PROP_MESSAGE,
+      g_param_spec_boolean ("message", "Message", "Emit gstreamer messages",
+          TRUE, G_PARAM_READWRITE));
+
+  GST_DEBUG_CATEGORY_INIT (aubiotempo_debug, "aubiotempo", 0,
+          "Aubio tempo extraction");
+
 }
 
 static void
@@ -134,6 +142,7 @@ gst_aubio_tempo_init (GstAubioTempo * filter,
 {
 
   filter->silent = TRUE;
+  filter->message = TRUE;
 
   filter->type_onset = aubio_onset_kl;
 
@@ -142,7 +151,7 @@ gst_aubio_tempo_init (GstAubioTempo * filter,
   filter->channels = 1;
 
   filter->last_beat = -1;
-  filter->period = 0;
+  filter->bpm = 0;
 
   filter->ibuf = new_fvec(filter->hop_size, filter->channels);
   filter->out = new_fvec(2,filter->channels);
@@ -178,6 +187,9 @@ gst_aubio_tempo_set_property (GObject * object, guint prop_id,
     case PROP_SILENT:
       filter->silent = g_value_get_boolean (value);
       break;
+    case PROP_MESSAGE:
+      filter->message = g_value_get_boolean (value);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -194,10 +206,25 @@ gst_aubio_tempo_get_property (GObject * object, guint prop_id,
     case PROP_SILENT:
       g_value_set_boolean (value, filter->silent);
       break;
+    case PROP_MESSAGE:
+      g_value_set_boolean (value, filter->message);
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
   }
+}
+
+static GstMessage *
+gst_aubio_tempo_message_new(GstAubioTempo *a, GstClockTime beat)
+{
+  GstStructure *s;
+  s = gst_structure_new("aubiotempo", 
+          "beat", GST_TYPE_CLOCK_TIME, beat  ,
+          "bpm" , G_TYPE_DOUBLE      , a->bpm,
+          NULL);
+
+  return gst_message_new_element (GST_OBJECT (a), s);
 }
 
 static GstFlowReturn
@@ -221,19 +248,28 @@ gst_aubio_tempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
       if (filter->out->data[0][0]==1) {
         GstClockTime now = GST_BUFFER_TIMESTAMP (buf);
         // correction of inside buffer time
-        now += GST_FRAMES_TO_CLOCK_TIME(j, audiofilter->format.rate);
-        now -= GST_FRAMES_TO_CLOCK_TIME(filter->hop_size - 1, audiofilter->format.rate);
+        now += GST_FRAMES_TO_CLOCK_TIME (j, audiofilter->format.rate);
+        now -= GST_FRAMES_TO_CLOCK_TIME (filter->hop_size - 1,
+                audiofilter->format.rate);
 
         if (filter->last_beat != -1 && now > filter->last_beat) {
-          filter->period = 60./(now - filter->last_beat)*1.e+9;
+          filter->bpm = 60./(now - filter->last_beat)*1.e+9;
+        } else {
+          filter->bpm = 0.;
         }
 
         if (filter->silent == FALSE) {
           g_print ("beat: %" GST_TIME_FORMAT " ", GST_TIME_ARGS(now));
-          g_print ("| period: %f\n", filter->period);
+          g_print ("| bpm: %f\n", filter->bpm);
         }
 
-        GST_LOG_OBJECT(filter, "beat %" GST_TIME_FORMAT ", period %3.f", GST_TIME_ARGS(now), filter->period);
+        GST_LOG_OBJECT (filter, "beat %" GST_TIME_FORMAT ", bpm %3.2f",
+            GST_TIME_ARGS(now), filter->bpm);
+
+        if (filter->message) {
+          GstMessage *m = gst_aubio_tempo_message_new (filter, now);
+          gst_element_post_message (GST_ELEMENT (filter), m);
+        }
 
         filter->last_beat = now;
       }

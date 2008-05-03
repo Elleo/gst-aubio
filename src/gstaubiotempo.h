@@ -54,6 +54,7 @@ struct _GstAubioTempo
   GstPad *sinkpad, *srcpad;
 
   gboolean silent;
+  gboolean message;
 
   aubio_tempo_t * t;
   fvec_t * ibuf;
@@ -62,9 +63,9 @@ struct _GstAubioTempo
   uint buf_size;
   uint hop_size;
   uint channels;
-  uint pos;
+  signed int pos;
 
-  gfloat period;
+  gdouble bpm;
   GstClockTime last_beat;
 
   aubio_onsetdetection_type type_onset;
