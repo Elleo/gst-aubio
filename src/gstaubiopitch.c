@@ -64,8 +64,8 @@ enum
     "audio/x-raw-float,"                                              \
     " width=(int)32,"                                                 \
     " endianness=(int)BYTE_ORDER,"                                    \
-    " rate=(int)44100,"                                             \
-    " channels=(int)[1,MAX]"
+    " rate=(int)44100,"                                               \
+    " channels=(int)1"
 
 GST_BOILERPLATE (GstAubioPitch, gst_aubio_pitch, GstAudioFilter,
     GST_TYPE_AUDIO_FILTER);
@@ -76,7 +76,8 @@ static void gst_aubio_pitch_set_property (GObject * object, guint prop_id,
 static void gst_aubio_pitch_get_property (GObject * object, guint prop_id,
     GValue * value, GParamSpec * pspec);
 
-static GstFlowReturn gst_aubio_pitch_transform_ip (GstBaseTransform * trans, GstBuffer * buf);
+static GstFlowReturn gst_aubio_pitch_transform_ip (GstBaseTransform * trans,
+        GstBuffer * buf);
 
 /* GObject vmethod implementations */
 static void
@@ -115,8 +116,8 @@ gst_aubio_pitch_class_init (GstAubioPitchClass * klass)
   gobject_class->get_property = gst_aubio_pitch_get_property;
 
   g_object_class_install_property (gobject_class, PROP_SILENT,
-      g_param_spec_boolean ("silent", "Silent", "Produce verbose output ?",
-          FALSE, G_PARAM_READWRITE));
+      g_param_spec_boolean ("silent", "Silent", "Produce verbose output",
+          TRUE, G_PARAM_READWRITE));
 }
 
 static void
@@ -204,11 +205,12 @@ gst_aubio_pitch_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
 
     if (filter->pos == filter->hop_size - 1) {
       smpl_t pitch = aubio_pitchdetection(filter->t, filter->ibuf);
-      gint64 now = GST_BUFFER_TIMESTAMP (buf);
+      GstClockTime now = GST_BUFFER_TIMESTAMP (buf);
       // correction of inside buffer time
       now += GST_FRAMES_TO_CLOCK_TIME(j, audiofilter->format.rate);
       if (filter->silent == FALSE) {
-        g_print ("pitch: %4.3f \t%" GST_TIME_FORMAT "\n", pitch, GST_TIME_ARGS(now));
+        g_print ("%" GST_TIME_FORMAT "\tpitch: %.3f\n",
+                GST_TIME_ARGS(now), pitch);
       }
 
       filter->pos = -1; /* so it will be zero next j loop */

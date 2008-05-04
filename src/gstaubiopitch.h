@@ -62,7 +62,7 @@ struct _GstAubioPitch
   uint hop_size;
   uint channels;
   uint samplerate;
-  uint pos;
+  signed int pos;
 
   aubio_pitchdetection_type type_pitch;
   aubio_pitchdetection_mode mode_pitch;
