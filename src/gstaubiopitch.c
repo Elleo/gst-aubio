@@ -41,6 +41,9 @@
 
 #include "gstaubiopitch.h"
 
+GST_DEBUG_CATEGORY_STATIC(aubiopitch_debug);
+#define GST_CAT_DEFAULT aubiopitch_debug
+
 static const GstElementDetails element_details = 
 GST_ELEMENT_DETAILS ("Aubio Pitch Analysis",
   "Filter/Analyzer/Audio",
@@ -118,6 +121,10 @@ gst_aubio_pitch_class_init (GstAubioPitchClass * klass)
   g_object_class_install_property (gobject_class, PROP_SILENT,
       g_param_spec_boolean ("silent", "Silent", "Produce verbose output",
           TRUE, G_PARAM_READWRITE));
+
+  GST_DEBUG_CATEGORY_INIT (aubiopitch_debug, "aubiopitch", 0,
+          "Aubio pitch extraction");
+
 }
 
 static void
@@ -208,10 +215,16 @@ gst_aubio_pitch_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
       GstClockTime now = GST_BUFFER_TIMESTAMP (buf);
       // correction of inside buffer time
       now += GST_FRAMES_TO_CLOCK_TIME(j, audiofilter->format.rate);
+
       if (filter->silent == FALSE) {
         g_print ("%" GST_TIME_FORMAT "\tpitch: %.3f\n",
                 GST_TIME_ARGS(now), pitch);
+
+
       }
+
+      GST_LOG_OBJECT (filter, "pitch %" GST_TIME_FORMAT ", freq %3.2f",
+              GST_TIME_ARGS(now), pitch);
 
       filter->pos = -1; /* so it will be zero next j loop */
     }
