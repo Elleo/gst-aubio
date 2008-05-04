@@ -26,11 +26,9 @@
  * <title>Example launch line</title>
  * <para>
  * <programlisting>
- * gst-launch -v -m audiotestsrc ! aubiotempo ! fakesink silent=TRUE
- * gst-launch filesrc location=file.wav ! waveparse ! audioconvert ! \
- *      aubiotempo silent=FALSE ! audioconvert ! alsasink
- * gst-launch filesrc location=file.mp3 ! mad ! audioconvert ! \
- *      aubiotempo silent=FALSE ! audioconvert ! alsasink
+ * gst-launch -v -m audiotestsrc ! aubiotempo ! fakesink
+ * gst-launch filesrc location=audiofile ! decodebin ! audioconvert ! \
+ *      aubiotempo silent=FALSE ! audioconvert ! autoaudiosink
  * </programlisting>
  * </para>
  * </refsect2>
@@ -73,7 +71,7 @@ enum
     " width=(int)32,"                                                 \
     " endianness=(int)BYTE_ORDER,"                                    \
     " rate=(int)44100,"                                               \
-    " channels=(int)[1,MAX]"
+    " channels=(int)1"
 
 GST_BOILERPLATE (GstAubioTempo, gst_aubio_tempo, GstAudioFilter,
     GST_TYPE_AUDIO_FILTER);
