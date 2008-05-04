@@ -1,3 +1,7 @@
-2008-02-04  Paul Brossier  <piem at piem dot org> 
+2008-05-03	Paul Brossier  <piem@piem.org>
+
+	* first versions of aubiotempo and aubiopitch
+
+2008-02-04  Paul Brossier  <piem@piem.org>
 
 	* initial project created

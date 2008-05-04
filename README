@@ -1,5 +1,22 @@
 gst-aubio
+---------
 
-This module contains a GStreamer plugin for aubio [0].
+This module contains a GStreamer plugin for aubio (http://aubio.org/).
 
-[0] http://aubio.org/
+Current elements
+================
+
+ - aubiotempo: tempo tracking using aubio_tempo
+ - aubiopitch: pitch extraction using aubio_pitch
+
+Known limitations
+=================
+
+ - mono: for now, the caps allows only for a single input channel.
+ - no pitch messages: using the messaging system for each pitch candidate
+   sounds like a bad idea.
+
+Contact
+=======
+
+Please contact Paul Brossier <piem@piem.org> for comments and patches.
