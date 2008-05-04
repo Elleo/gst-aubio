@@ -26,7 +26,9 @@
  * <title>Example launch line</title>
  * <para>
  * <programlisting>
- * gst-launch -v -m audiotestsrc ! aubiopitch ! fakesink silent=TRUE
+ * gst-launch -v -m audiotestsrc ! aubiopitch ! fakesink
+ * gst-launch filesrc location=audiofile ! decodebin ! audioconvert ! \
+ *      aubiopitch silent=FALSE ! audioconvert ! autoaudiosink
  * </programlisting>
  * </para>
  * </refsect2>
@@ -219,8 +221,6 @@ gst_aubio_pitch_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
       if (filter->silent == FALSE) {
         g_print ("%" GST_TIME_FORMAT "\tpitch: %.3f\n",
                 GST_TIME_ARGS(now), pitch);
-
-
       }
 
       GST_LOG_OBJECT (filter, "pitch %" GST_TIME_FORMAT ", freq %3.2f",
