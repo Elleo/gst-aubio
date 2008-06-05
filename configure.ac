@@ -66,6 +66,17 @@ dnl make AUBIO_CFLAGS and AUBIO_LIBS available
 AC_SUBST(AUBIO_CFLAGS)
 AC_SUBST(AUBIO_LIBS)
 
+dnl also check for samplerate and fftw3f, as aubio is linked to them 
+PKG_CHECK_MODULES(SAMPLERATE, samplerate  >= 0.0.15,  SAMPLERATE_SUPPORT=1)
+AC_ARG_ENABLE(fftw3f,
+  AC_HELP_STRING([--enable-fftw3f],[compile with fftw3f [[default=auto]]]),
+  [with_fftw3f=$enableval],
+  with_fftw3f="yes")
+if test "$with_fftw3f" = "yes"; then
+  PKG_CHECK_MODULES(FFTWLIB,    fftw3f >= 3.0.0,     FFTW3F_SUPPORT=1, FFTW3F_SUPPORT=0)
+else
+  PKG_CHECK_MODULES(FFTWLIB,    fftw3  >= 3.0.0,     FFTW3_SUPPORT=1)
+fi
 
 dnl Now we're ready to ask for gstreamer libs and cflags
 dnl And we can also ask for the right version of gstreamer
