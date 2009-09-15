@@ -66,7 +66,7 @@ struct _GstAubioTempo
   signed int pos;
 
   gdouble bpm;
-  GstClockTime last_beat;
+  gdouble last_beat;
 
   aubio_onsetdetection_type type_onset;
 

@@ -243,21 +243,21 @@ gst_aubio_tempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
     if (filter->pos == filter->hop_size - 1) {
       aubio_tempo(filter->t, filter->ibuf, filter->out);
 
-      if (filter->out->data[0][0]==1) {
-        GstClockTime now = GST_BUFFER_TIMESTAMP (buf);
+      if (filter->out->data[0][0]>=1) {
+        gdouble now = GST_BUFFER_OFFSET (buf);
         // correction of inside buffer time
-        now += GST_FRAMES_TO_CLOCK_TIME (j, audiofilter->format.rate);
-        now -= GST_FRAMES_TO_CLOCK_TIME (filter->hop_size - 1,
-                audiofilter->format.rate);
+        now += (smpl_t)(j - filter->hop_size + 1);
+        // correction of float period
+        now += (filter->out->data[0][0] - 1.)*(smpl_t)filter->hop_size;
 
         if (filter->last_beat != -1 && now > filter->last_beat) {
-          filter->bpm = 60./(now - filter->last_beat)*1.e+9;
+          filter->bpm = 60./(GST_FRAMES_TO_CLOCK_TIME(now - filter->last_beat, audiofilter->format.rate))*1.e+9;
         } else {
           filter->bpm = 0.;
         }
 
         if (filter->silent == FALSE) {
-          g_print ("beat: %" GST_TIME_FORMAT " ", GST_TIME_ARGS(now));
+          g_print ("beat: %f ", GST_FRAMES_TO_CLOCK_TIME( now, audiofilter->format.rate)*1.e-9);
           g_print ("| bpm: %f\n", filter->bpm);
         }
 
