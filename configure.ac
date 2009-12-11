@@ -1,7 +1,6 @@
 AC_INIT
 
 dnl versions of aubio
-AUBIO_MAJORMINOR=0.3.2
 AUBIO_REQUIRED=0.3.2
 
 dnl versions of gstreamer and plugins-base
