@@ -142,10 +142,8 @@ gst_aubio_tempo_init (GstAubioTempo * filter,
   filter->silent = TRUE;
   filter->message = TRUE;
 
-  filter->type_onset = aubio_onset_kl;
-
   filter->buf_size = 1024;
-  filter->hop_size = 512;
+  filter->hop_size = 128;
   filter->channels = 1;
 
   filter->last_beat = -1;
@@ -153,8 +151,8 @@ gst_aubio_tempo_init (GstAubioTempo * filter,
 
   filter->ibuf = new_fvec(filter->hop_size, filter->channels);
   filter->out = new_fvec(2,filter->channels);
-  filter->t = new_aubio_tempo(filter->type_onset,
-          filter->buf_size, filter->hop_size, filter->channels);
+  filter->t = new_aubio_tempo("kl",
+          filter->buf_size, filter->hop_size, filter->channels, 44100);
 }
 
 static void
@@ -241,9 +239,9 @@ gst_aubio_tempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
         filter->pos);
 
     if (filter->pos == filter->hop_size - 1) {
-      aubio_tempo(filter->t, filter->ibuf, filter->out);
+      aubio_tempo_do(filter->t, filter->ibuf, filter->out);
 
-      if (filter->out->data[0][0]>=1) {
+      if (filter->out->data[0][0]> 0.) {
         gdouble now = GST_BUFFER_OFFSET (buf);
         // correction of inside buffer time
         now += (smpl_t)(j - filter->hop_size + 1);

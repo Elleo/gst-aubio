@@ -68,8 +68,6 @@ struct _GstAubioTempo
   gdouble bpm;
   gdouble last_beat;
 
-  aubio_onsetdetection_type type_onset;
-
 };
 
 struct _GstAubioTempoClass 
