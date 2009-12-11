@@ -55,17 +55,15 @@ struct _GstAubioPitch
 
   gboolean silent;
 
-  aubio_pitchdetection_t * t;
+  aubio_pitch_t * t;
   fvec_t * ibuf;
+  fvec_t * obuf;
 
   uint buf_size;
   uint hop_size;
   uint channels;
   uint samplerate;
   signed int pos;
-
-  aubio_pitchdetection_type type_pitch;
-  aubio_pitchdetection_mode mode_pitch;
 
 };
 

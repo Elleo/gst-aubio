@@ -136,18 +136,16 @@ gst_aubio_pitch_init (GstAubioPitch * filter,
 
   filter->silent = TRUE;
 
-  filter->type_pitch = aubio_pitch_yinfft;
-  filter->mode_pitch = aubio_pitchm_freq;
-
   filter->buf_size = 2048;
   filter->hop_size = 256;
   filter->samplerate = 44100;
   filter->channels = 1;
 
   filter->ibuf = new_fvec(filter->hop_size, filter->channels);
-  filter->t = new_aubio_pitchdetection(filter->buf_size, filter->hop_size,
-      filter->channels, filter->samplerate, filter->type_pitch, filter->mode_pitch);
-  aubio_pitchdetection_set_yinthresh(filter->t, 0.7);
+  filter->obuf = new_fvec(1, filter->channels);
+  filter->t = new_aubio_pitch("yinfft", filter->buf_size, filter->hop_size,
+      filter->channels, filter->samplerate);
+  aubio_pitch_set_tolerance(filter->t, 0.7);
 }
 
 static void
@@ -156,10 +154,13 @@ gst_aubio_pitch_finalize (GObject * obj)
   GstAubioPitch * aubio_pitch = GST_AUBIO_PITCH (obj);
 
   if (aubio_pitch->t) {
-    del_aubio_pitchdetection(aubio_pitch->t);
+    del_aubio_pitch(aubio_pitch->t);
   }
   if (aubio_pitch->ibuf) {
     del_fvec(aubio_pitch->ibuf);
+  }
+  if (aubio_pitch->obuf) {
+    del_fvec(aubio_pitch->obuf);
   }
 
   G_OBJECT_CLASS (parent_class)->finalize (obj);
@@ -213,7 +214,8 @@ gst_aubio_pitch_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
         filter->pos);
 
     if (filter->pos == filter->hop_size - 1) {
-      smpl_t pitch = aubio_pitchdetection(filter->t, filter->ibuf);
+      aubio_pitch_do(filter->t, filter->ibuf, filter->obuf);
+      smpl_t pitch = filter->obuf->data[0][0];
       GstClockTime now = GST_BUFFER_TIMESTAMP (buf);
       // correction of inside buffer time
       now += GST_FRAMES_TO_CLOCK_TIME(j, audiofilter->format.rate);
