@@ -22,6 +22,7 @@
 #include <gst/gst.h>
 #include "gstaubiotempo.h"
 #include "gstaubiopitch.h"
+#include "config.h"
 
 #define GST_CAT_DEFAULT gst_aubiotempo_debug
 GST_DEBUG_CATEGORY_STATIC (GST_CAT_DEFAULT);
