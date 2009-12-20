@@ -5,6 +5,7 @@ aclocal.m4
 autom4te.cache/
 depcomp
 ltmain.sh
+libtool
 install-sh
 missing
 config.guess
@@ -15,3 +16,9 @@ configure
 config.h
 config.h.in
 config.h.in~
+stamp-h1
+*.la
+*.lo
+*.o
+.deps
+.libs
