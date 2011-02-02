@@ -1,3 +1,9 @@
+2011-02-03  Mike Sheldon <mike@mikeasoft.com>
+
+	* src/gstaubiopitch.c:
+	* src/gstaubiotempo.c:
+	Update plugins to work with latest version of aubio from git HEAD.
+
 === release 0.10.0.1 ===
 
 2008-06-02     Paul Brossier  <piem@piem.org>

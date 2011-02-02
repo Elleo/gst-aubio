@@ -149,10 +149,10 @@ gst_aubio_tempo_init (GstAubioTempo * filter,
   filter->last_beat = -1;
   filter->bpm = 0;
 
-  filter->ibuf = new_fvec(filter->hop_size, filter->channels);
-  filter->out = new_fvec(2,filter->channels);
+  filter->ibuf = new_fvec(filter->hop_size);
+  filter->out = new_fvec(2);
   filter->t = new_aubio_tempo("kl",
-          filter->buf_size, filter->hop_size, filter->channels, 44100);
+          filter->buf_size, filter->hop_size, 44100);
 }
 
 static void
@@ -235,18 +235,18 @@ gst_aubio_tempo_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
   /* block loop */
   for (j = 0; j < nsamples; j++) {
     /* copy input to ibuf */
-    fvec_write_sample(filter->ibuf, ((smpl_t *) GST_BUFFER_DATA(buf))[j], 0,
+    fvec_write_sample(filter->ibuf, ((smpl_t *) GST_BUFFER_DATA(buf))[j],
         filter->pos);
 
     if (filter->pos == filter->hop_size - 1) {
       aubio_tempo_do(filter->t, filter->ibuf, filter->out);
 
-      if (filter->out->data[0][0]> 0.) {
+      if (filter->out->data[0]> 0.) {
         gdouble now = GST_BUFFER_OFFSET (buf);
         // correction of inside buffer time
         now += (smpl_t)(j - filter->hop_size + 1);
         // correction of float period
-        now += (filter->out->data[0][0] - 1.)*(smpl_t)filter->hop_size;
+        now += (filter->out->data[0] - 1.)*(smpl_t)filter->hop_size;
 
         if (filter->last_beat != -1 && now > filter->last_beat) {
           filter->bpm = 60./(GST_FRAMES_TO_CLOCK_TIME(now - filter->last_beat, audiofilter->format.rate))*1.e+9;

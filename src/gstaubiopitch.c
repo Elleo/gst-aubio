@@ -141,10 +141,10 @@ gst_aubio_pitch_init (GstAubioPitch * filter,
   filter->samplerate = 44100;
   filter->channels = 1;
 
-  filter->ibuf = new_fvec(filter->hop_size, filter->channels);
-  filter->obuf = new_fvec(1, filter->channels);
+  filter->ibuf = new_fvec(filter->hop_size);
+  filter->obuf = new_fvec(1);
   filter->t = new_aubio_pitch("yinfft", filter->buf_size, filter->hop_size,
-      filter->channels, filter->samplerate);
+      filter->samplerate);
   aubio_pitch_set_tolerance(filter->t, 0.7);
 }
 
@@ -210,12 +210,12 @@ gst_aubio_pitch_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
   /* block loop */
   for (j = 0; j < nsamples; j++) {
     /* copy input to ibuf */
-    fvec_write_sample(filter->ibuf, ((smpl_t *) GST_BUFFER_DATA(buf))[j], 0,
+    fvec_write_sample(filter->ibuf, ((smpl_t *) GST_BUFFER_DATA(buf))[j],
         filter->pos);
 
     if (filter->pos == filter->hop_size - 1) {
       aubio_pitch_do(filter->t, filter->ibuf, filter->obuf);
-      smpl_t pitch = filter->obuf->data[0][0];
+      smpl_t pitch = filter->obuf->data[0];
       GstClockTime now = GST_BUFFER_TIMESTAMP (buf);
       // correction of inside buffer time
       now += GST_FRAMES_TO_CLOCK_TIME(j, audiofilter->format.rate);
